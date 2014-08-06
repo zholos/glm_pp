@@ -1,0 +1,14 @@
+python
+import sys
+sys.path.insert(0, '..')
+import glm_pp
+end
+
+b main:breakpoint
+r
+p v1
+p v2
+p v3
+p m1
+p m2
+p m3
