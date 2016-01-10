@@ -41,8 +41,10 @@ class MatPrinter:
 
 def build_pretty_printer():
     pp = gdb.printing.RegexpCollectionPrettyPrinter("glm_pp")
-    pp.add_printer("glm::vec", "^glm::detail::tvec\d<[^<>]*>$", VecPrinter)
-    pp.add_printer("glm::mat", "^glm::detail::tmat\dx\d<[^<>]*>$", MatPrinter)
+    pp.add_printer(
+        "glm::vec", r"^glm::(detail::)?tvec\d<[^<>]*>$", VecPrinter)
+    pp.add_printer(
+        "glm::mat", r"^glm::(detail::)?tmat\dx\d<[^<>]*>$", MatPrinter)
     return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(),
