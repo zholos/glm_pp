@@ -8,14 +8,27 @@ _type_letters = {
 
 def _vec_info(v):
     # vec contains either a union of structs or a struct of unions, depending on
-    # configuration. gdb can't properly access the named members.
-    # Instead, simply cast to an array. This is similar to how operator[] is
-    # implemented.
+    # configuration. gdb can't properly access the named members, and in some
+    # cases the names are wrong.
+    # It would be simple to cast to an array, similarly to how operator[] is
+    # implemented, but values returned by functions called from gdb don't have
+    # an address.
+    # Instead, recursively find all fields of required type and sort by offset.
     T = v.type.template_argument(0)
     letter = _type_letters.get(T.code, "t")
     length = v.type.sizeof // T.sizeof
-    V = v.address.cast(T.array(length-1).pointer()).dereference()
-    items = tuple(str(V[i]) for i in range(length))
+    items = {}
+    def find(v, bitpos):
+        t = v.type.strip_typedefs()
+        if t.code in (gdb.TYPE_CODE_STRUCT, gdb.TYPE_CODE_UNION):
+            for f in t.fields():
+                if hasattr(f, "bitpos"): # not static
+                    find(v[f], bitpos + f.bitpos)
+        elif t == T:
+            items[bitpos] = v
+    find(v, 0)
+    assert len(items) == length
+    items = [str(f) for k, f in sorted(items.items())]
     return letter, length, items
 
 class VecPrinter:

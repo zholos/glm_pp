@@ -12,3 +12,5 @@ p v3
 p m1
 p m2
 p m3
+p f(8)
+c
