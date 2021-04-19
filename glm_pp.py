@@ -14,7 +14,14 @@ def _vec_info(v):
     # implemented, but values returned by functions called from gdb don't have
     # an address.
     # Instead, recursively find all fields of required type and sort by offset.
-    T = v.type.template_argument(0)
+    typ = v.type
+
+    # Dereference reference types automatically
+    if typ.code == gdb.TYPE_CODE_REF:
+      typ = typ.target()
+      v = v.referenced_value()
+
+    T = v.type.template_argument(1) 
     letter = _type_letters.get(T.code, "t")
     length = v.type.sizeof // T.sizeof
     items = {}
@@ -55,9 +62,10 @@ class MatPrinter:
 def build_pretty_printer():
     pp = gdb.printing.RegexpCollectionPrettyPrinter("glm_pp")
     pp.add_printer(
-        "glm::vec", r"^glm::(detail::)?tvec\d<[^<>]*>$", VecPrinter)
+        "glm::vec", r"^glm::vec<\d+, \w+, \(glm::qualifier\)0>$", VecPrinter)
     pp.add_printer(
-        "glm::mat", r"^glm::(detail::)?tmat\dx\d<[^<>]*>$", MatPrinter)
+        "glm::vec", r"^glm::mat<\d+, \d+, \w+, \(glm::qualifier\)0>$", MatPrinter)
+
     return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(),
